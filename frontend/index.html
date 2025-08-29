@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+    <style>
+        body {
+            background-color: #007bff;
+            /* fundo azul */
+            min-height: 100vh;
+            /* ocupa toda a tela */
+        }
+    </style>
+
+</head>
+
+<body class="d-flex justify-content-center align-items-center">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+
+    <!-- area do login -->
+    <div class="d-flex justify-content-center align-items-center vh-100">
+        <div class="p-4 border rounded bg-white" style="width: 400px;">
+            <h2 class="text-center mb-3">Login</h2>
+            <form id="loginForm">
+                <div class="mb-3">
+                    <input type="email" id="emailInput" class="form-control" placeholder="Email">
+                </div>
+                <div class="mb-3">
+                    <input type="password" id="senhaInput" class="form-control" placeholder="Senha">
+                    <div class="text-end mt-1">
+                        <a href="recuperarSenha.html" class="btn btn-link btn-sm p-0">Esqueci a senha</a>
+                    </div>
+                </div>
+
+                <p id="erroMsg" class="text-danger small"></p>
+
+                <!-- Botão Entrar -->
+                <button type="submit" id="entrarBtn" class="btn btn-primary rounded-pill w-100 mb-2" disabled>
+                    Entrar
+                </button>
+
+                <!-- Botão Bypass (dps sera removido) -->
+                <a href="tela.html" class="btn btn-secondary rounded-pill w-100">
+                    Bypass
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <!-- area útil pro back -->
+    <script>
+        const emailInput = document.getElementById("emailInput");
+        const senhaInput = document.getElementById("senhaInput");
+        const entrarBtn = document.getElementById("entrarBtn");
+        const erroMsg = document.getElementById("erroMsg");
+        const form = document.getElementById("loginForm");
+
+        // confere se ambos campos estão preenchidos
+        function checarCampos() {
+            entrarBtn.disabled = !(emailInput.value.trim() && senhaInput.value.trim());
+        }
+
+        emailInput.addEventListener("input", checarCampos);
+        senhaInput.addEventListener("input", checarCampos);
+
+        form.addEventListener("submit", async function (event) {
+            event.preventDefault();
+
+            const email = emailInput.value;
+            const senha = senhaInput.value;
+
+            // animação de loading
+            entrarBtn.disabled = true;
+            const originalText = entrarBtn.textContent;
+            entrarBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Entrando...`;
+            erroMsg.textContent = '';
+
+            // conexão com a API/banco
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password: senha })
+                });
+
+                const data = await response.json();
+
+                // Login com algo errado
+                if (!response.ok) {
+                    erroMsg.textContent = data.message || 'Usuário ou senha inválidos.';
+                    entrarBtn.disabled = false;
+                    entrarBtn.textContent = originalText;
+                } else {
+                    // Login bem-sucedido
+                    window.location.href = 'tela.html';
+                }
+            // se conexão com API não der certo
+            } catch (error) {
+                erroMsg.textContent = 'Erro de conexão. Tente novamente mais tarde.';
+                entrarBtn.disabled = false;
+                entrarBtn.textContent = originalText;
+            }
+        });
+    </script>
+
+
+</body>
+
+</html>
