@@ -1,8 +1,9 @@
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const db = require("../config/db");
 
-// só para teste, estou fingindo que a hash que veio do banco (senha "1234")
-const hashDoBanco = "$2b$10$z1DkzB8cft5hG6fN0fhx..8sLQzVgHZF7bS3V/5LQZ5rF1bH5dGvK";
 
+// LOGIN
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
@@ -13,15 +14,24 @@ exports.login = async (req, res) => {
     }
 
     try {
-        // versão mockada (por enquanto)
-        const senhaCorreta = await bcrypt.compare(password, hashDoBanco);
+        // buscar o user pelo email
+        const [rows] = await db.query("SELECT * FROM USUARIOS WHERE email = ?", [email]);
 
-        if (!senhaCorreta) {
+        if (rows.length === 0) {
             return res.status(401).json({ error: "Credenciais inválidas!" });
         }
 
+        const usuario = rows[0];
+
+        // confere a senha (precisa adicionar uma coluna para isso no db)
+        const senhaCorreta = await bcrypt.compare(password, usuario.senha);
+        if (!senhaCorreta) {
+            return res.status(401).json({ error: "Credenciais inválidas! "});
+        }
+
+        // gera o token
         const token = jwt.sign(
-            { email },
+            { id: usuario.id_usuario, email: usuario.email },
             process.env.JWT_SECRET,
             { expiresIn: "1h" }
         );
@@ -31,37 +41,20 @@ exports.login = async (req, res) => {
             token
         });
 
-        // (quando o banco estiver pronto):
-        /*
-        const db = require("../config/db"); // exemplo de conexão
-        const [rows] = await db.query("SELECT senha FROM usuarios WHERE email = ?", [email]);
-
-        if (rows.length === 0) {
-            return res.status(401).json({ error: "Credenciais inválidas"});
-        }
-
-        const hashDoBanco = rows[0].senha;
-        const senhaCorreta = await bcrypt.compare(password, hashDoBanco);
-
-        if (senhaCorreta) {
-            return res.json({ message: "Login bem-sucedido!" });
-        } else {
-            return res.status(401).json({ error: "Erro interno do servidor" });    
-        }
-        */
-
-
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ error: "Erro interno do servidor" });
+        console.error("Erro no login:", err);
+        return res.status(500).json({ erro: "Erro interno do servidor" });
     }
+
 };
 
-exports.register = async (req, res) => {
-    const { email, password } = req.body;
 
-    if (!email || !password) {
-        return res.status(400).json({ error: "Email e senha são obrigatórios!" });
+// REGISTER
+exports.register = async (req, res) => {
+    const { nome, email, password, id_tipo_usuario, id_curso } = req.body;
+
+    if (!email || !password || !id_tipo_usuario) {
+        return res.status(400).json({ error: "Nome, email, senha e tipo de usuários são obrigatórios!" });
     }
 
     try {
@@ -69,14 +62,21 @@ exports.register = async (req, res) => {
         const saltRounds = 10;
         const hash = await bcrypt.hash(password, saltRounds);
 
-        // por enquanto só retorna, depois aqui vai passar para o banco
+        // insere no banco
+        const [result] = await db.query(
+            "INSERT INTO USUARIOS (nome, email, senha, id_tipo_usuario, id_curso) VALUES (?, ?, ?, ?, ?)",
+            [nome, email, hash, id_tipo_usuario, id_curso || null]
+        );
+
         return res.status(201).json({
-            message: "Usuário registrado com sucesso (mock)!",
-            email,
-            senhaHash: hash
+            message: "Usuário registrado com sucesso!",
+            id_usuario: result.insertId,
+            email
         });
+
+
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: "Erro ao registrar usuário" });
     }
-}
+};
