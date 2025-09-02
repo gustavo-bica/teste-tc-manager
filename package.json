@@ -1,5 +1,25 @@
 {
   "dependencies": {
-    "bootstrap": "^5.3.8"
-  }
+    "bootstrap": "^5.3.8",
+    "dotenv": "^17.2.2",
+    "mysql2": "^3.14.4"
+  },
+  "name": "teste-tc-manager",
+  "description": "Este projeto tem como objetivo desenvolver uma plataforma web para centralizar e otimizar o processo de orientação e avaliação dos Trabalhos de Conclusão de Curso (TCC).",
+  "version": "1.0.0",
+  "main": "test-api.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gustavo-bica/teste-tc-manager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gustavo-bica/teste-tc-manager/issues"
+  },
+  "homepage": "https://github.com/gustavo-bica/teste-tc-manager#readme"
 }
