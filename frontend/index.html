@@ -47,9 +47,20 @@
                 </button>
 
                 <!-- Botão Bypass (dps sera removido) -->
-                <a href="tela.html" class="btn btn-secondary rounded-pill w-100">
+                <a href="tela.html" class="btn btn-secondary rounded-pill w-100 mb-2">
                     Bypass
                 </a>
+
+                <!-- Botão Testar Banco -->
+                <button type="button" id="testarBancoBtn" class="btn btn-info rounded-pill w-100">
+                    Testar Banco
+                </button>
+                
+                <!-- Área para mostrar resultado do teste -->
+                <div id="resultadoTeste" class="mt-3" style="display: none;">
+                    <div class="alert" id="alertaTeste" role="alert"></div>
+                    <div id="nomesUsuarios"></div>
+                </div>
             </form>
         </div>
     </div>
@@ -61,6 +72,10 @@
         const entrarBtn = document.getElementById("entrarBtn");
         const erroMsg = document.getElementById("erroMsg");
         const form = document.getElementById("loginForm");
+        const testarBancoBtn = document.getElementById("testarBancoBtn");
+        const resultadoTeste = document.getElementById("resultadoTeste");
+        const alertaTeste = document.getElementById("alertaTeste");
+        const nomesUsuarios = document.getElementById("nomesUsuarios");
 
         // confere se ambos campos estão preenchidos
         function checarCampos() {
@@ -107,6 +122,63 @@
                 entrarBtn.disabled = false;
                 entrarBtn.textContent = originalText;
             }
+        });
+
+        // Função para testar o banco de dados
+        testarBancoBtn.addEventListener("click", async function() {
+            // Animação de loading
+            testarBancoBtn.disabled = true;
+            const originalText = testarBancoBtn.textContent;
+            testarBancoBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Testando...`;
+            
+            // Esconder resultado anterior
+            resultadoTeste.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/testar-banco', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                // Mostrar resultado
+                resultadoTeste.style.display = 'block';
+
+                if (data.success) {
+                    // Sucesso
+                    alertaTeste.className = 'alert alert-success';
+                    alertaTeste.textContent = data.message;
+                    
+                    // Mostrar nomes dos usuários
+                    if (data.nomes && data.nomes.length > 0) {
+                        nomesUsuarios.innerHTML = `
+                            <h6>Nomes encontrados:</h6>
+                            <ul class="list-group list-group-flush">
+                                ${data.nomes.map(nome => `<li class="list-group-item">${nome}</li>`).join('')}
+                            </ul>
+                        `;
+                    } else {
+                        nomesUsuarios.innerHTML = '<p class="text-muted">Nenhum usuário encontrado na tabela.</p>';
+                    }
+                } else {
+                    // Erro
+                    alertaTeste.className = 'alert alert-danger';
+                    alertaTeste.textContent = data.error || 'Erro desconhecido ao testar o banco.';
+                    nomesUsuarios.innerHTML = '';
+                }
+
+            } catch (error) {
+                // Erro de conexão
+                resultadoTeste.style.display = 'block';
+                alertaTeste.className = 'alert alert-danger';
+                alertaTeste.textContent = 'Erro de conexão ao testar o banco. Verifique se o servidor está rodando.';
+                nomesUsuarios.innerHTML = '';
+            }
+
+            // Restaurar botão
+            testarBancoBtn.disabled = false;
+            testarBancoBtn.textContent = originalText;
         });
     </script>
 

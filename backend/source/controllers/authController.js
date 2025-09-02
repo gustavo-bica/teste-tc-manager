@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
-// const db = require("../config/db"); // Comentado temporariamente
+const db = require("../config/db"); // Descomentado para teste do banco
 
 // armazenamento de tokens temporários (ideial seria na tabela do BD)
 let resetTokens = {};
@@ -76,4 +76,31 @@ exports.esqueciSenha = async (req, res) => {
     return res.status(503).json({ 
         error: "Funcionalidade temporariamente indisponível. Banco de dados não configurado." 
     });
+};
+
+// TESTE DO BANCO - Buscar nomes da tabela USUARIOS
+exports.testarBanco = async (req, res) => {
+    try {
+        console.log("🔍 Iniciando teste do banco de dados...");
+        
+        // Query para buscar apenas os nomes da tabela USUARIOS
+        const [rows] = await db.execute("SELECT mome FROM USUARIOS");
+        
+        console.log("✅ Teste do banco bem-sucedido! Nomes encontrados:", rows.length);
+        
+        return res.json({
+            success: true,
+            message: `Banco testado com sucesso! ${rows.length} usuário(s) encontrado(s).`,
+            nomes: rows.map(row => row.mome)
+        });
+        
+    } catch (err) {
+        console.error("❌ Erro no teste do banco:", err);
+        
+        return res.status(500).json({
+            success: false,
+            error: "Erro ao conectar com o banco de dados na nuvem.",
+            details: err.message
+        });
+    }
 };
