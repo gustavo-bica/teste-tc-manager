@@ -20,10 +20,11 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 1,
   queueLimit: 0,
   ssl: {
-    ca: fs.readFileSync(certPath)
+    ca: fs.readFileSync(certPath),
+    rejectUnauthorized: false
   },
   connectTimeout: 20000
 });
