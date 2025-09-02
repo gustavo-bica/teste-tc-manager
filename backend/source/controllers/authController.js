@@ -1,7 +1,10 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
 const db = require("../config/db");
 
+// armazenamento de tokens temporários (ideial seria na tabela do BD)
+let resetTokens = {};
 
 // LOGIN
 exports.login = async (req, res) => {
@@ -78,5 +81,95 @@ exports.register = async (req, res) => {
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: "Erro ao registrar usuário" });
+    }
+};
+
+// REDEFINIR SENHA
+exports.redefinirSenha = async (req, res) => {
+    const { token, novaSenha } = req.body;
+
+    if (!token || !novaSenha) {
+        return res.status(400).json({ error: "Token e nova senha são obrigatórios!" });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // valida o token
+
+        // confere se ainda é válido em memória
+        if (!resetTokens[decoded.email] || resetTokens[decoded.email] !== token) {
+            return res.status(400).json({ error: "Token inválido ou expirado! "});
+        }
+
+        const saltRounds = 10;
+        const hash = await bcrypt.hash(novaSenha, saltRounds);
+
+        await db.query("UPDATE USUARIOS SET senha = ? WHERE email = ?", [hash, decoded.email]);
+
+        // remove o token da lista
+        delete resetTokens[decoded.email];
+
+        return res.json({ message: "Senha redefinida com sucesso!" });
+
+    } catch (err) {
+        console.error("Erro no redefinirSenha", err);
+        return res.status(500).json({ error: "Erro ao redefinir senha." })
+    }
+};
+
+// ESQUECI A SENHA
+exports.esqueciSenha = async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) return res.status(400).json({ error: "Email é obrigatório! "});
+
+    try {
+        // verifica se o usuário existe
+        const [rows] = await db.query("SELECT * FROM USUARIOS WHERE email = ?", [email]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ error: "Email não encontrado! "});
+        }
+
+        const usuario = rows[0];
+        
+        // gera token temporário
+        const token = jwt.sign(
+            { id: usuario.id_usurio, email: usuario.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "10m" } // expira em 10 minutos
+        );
+
+        // salva o token na memória
+        resetTokens[email] = token;
+
+        // link para redefinir (TODO: ajustar para o endereço correto do front)
+        const resetLink = `${process.env.FRONTEND_URL}/reset-passoword?token=${token}`;
+
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+        
+        // monta o email e envia
+        await transporter.sendMail({
+            from: `"Suporte TC-Manager <${process.env.EMAIL_USER}>`,
+            to: usuario.email,
+            subject: "Redefinição de Senha",
+            html: `
+            <h3>Redefinição de Senha</h3>
+            <p>Você solicitou a redefinição de senha. Clique no link abaixo para continuar:</p>
+            <a href="${resetLink}">${resetLink}</a>
+            <p>Este link expira em 10 minutos.</p>
+            `
+        });
+
+        return res.json({ message: "Email de redefinição enviado!" });
+
+    } catch (err) {
+        console.error("Erro no esqueciSenha:", err);
+        return res.status(500).json({ error: "Erro ao processar solicitação" });
     }
 };

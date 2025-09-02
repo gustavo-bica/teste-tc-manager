@@ -1,4 +1,6 @@
 const express = require("express");
+const bodyParser = require("body-parser");
+
 const app = express();
 
 const alunoRoutes = require("./routes/alunoRoutes");
@@ -8,7 +10,7 @@ const trabalhoRoutes = require("./routes/trabalhoRoutes");
 const avaliacaoBancaRoutes = require("./routes/avaliacaoBancaRoutes");
 const authRoutes = require("./routes/authRoutes");
 
-app.use(express.json());
+app.use(bodyParser.json());
 
 // passa o router importado
 app.use("/alunos", alunoRoutes);
