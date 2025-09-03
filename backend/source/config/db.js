@@ -1,4 +1,3 @@
-// Coloque este console.log como a PRIMEIRA linha do arquivo para depurar
 console.log(`Ambiente atual (NODE_ENV): ${process.env.NODE_ENV}`);
 
 // Carrega o .env APENAS se não estiver em produção
@@ -8,7 +7,6 @@ if (process.env.NODE_ENV !== 'production') {
 
 const mysql = require('mysql2/promise');
 
-// Adicione estes logs para ver o que o código está tentando usar
 console.log(`Tentando conectar ao host: ${process.env.BD_HOST}`);
 console.log(`Usando a porta: ${process.env.BD_PORT}`);
 
