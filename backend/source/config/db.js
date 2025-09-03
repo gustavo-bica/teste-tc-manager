@@ -22,7 +22,7 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   // Se o seu banco de dados na nuvem exigir SSL, descomente a linha abaixo
-  // ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false } // <--- DESCOMENTE ESTA LINHA
 });
 
 module.exports = pool;
